@@ -1,0 +1,92 @@
+name: Android CI
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Android Build & Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------------------------------------
+      # Checkout source code
+      # -------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -------------------------------------------------------
+      # Setup JDK 17
+      # -------------------------------------------------------
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # -------------------------------------------------------
+      # Setup Gradle
+      # -------------------------------------------------------
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # -------------------------------------------------------
+      # Make Gradle Wrapper executable
+      # -------------------------------------------------------
+      - name: Grant execute permission for Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      # -------------------------------------------------------
+      # Run Unit Tests
+      # -------------------------------------------------------
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+
+      # -------------------------------------------------------
+      # Run Android Lint
+      # -------------------------------------------------------
+      - name: Run Android Lint
+        run: ./gradlew lintDebug
+
+      # -------------------------------------------------------
+      # Build Debug APK
+      # -------------------------------------------------------
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      # -------------------------------------------------------
+      # Upload APK as GitHub Actions artifact
+      # -------------------------------------------------------
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: medicareplus-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # -------------------------------------------------------
+      # Upload Lint Report
+      # -------------------------------------------------------
+      - name: Upload Lint Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-lint-report
+          path: |
+            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-debug.xml
+          if-no-files-found: ignore
