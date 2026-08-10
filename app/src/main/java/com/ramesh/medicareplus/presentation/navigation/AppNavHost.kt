@@ -1,5 +1,6 @@
 package com.ramesh.medicareplus.presentation.navigation
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -11,7 +12,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ramesh.medicareplus.core.utils.Routes
-import com.ramesh.medicareplus.presentation.addmedicine.MedicineListScreen
+import com.ramesh.medicareplus.presentation.addmedicine.AddMedicineScreen
+import com.ramesh.medicareplus.presentation.madicinelist.MedicineListScreen
 import com.ramesh.medicareplus.presentation.chart.StatisticsScreen
 import com.ramesh.medicareplus.presentation.home.HomeScreen
 import com.ramesh.medicareplus.presentation.settings.ProfileScreen
@@ -78,9 +80,16 @@ fun AppNavHost(innerPadding: PaddingValues) {
                 }
 
                 composable(Routes.Home.route) {
-                    HomeScreen()
+                    HomeScreen(
+                        onMenuClick = {
+                            composable(Routes.AddMedicineSchedule.route) {
+                                AddMedicineScreen()
+                            }
+                        }.also {
+                            Log.d("AddMedicineSchedule", "AppNavHost: ")
+                        }
+                    )
                 }
-
                 composable(Routes.Medicine.route) {
                     MedicineListScreen(
                         onBackClick = {
@@ -88,7 +97,6 @@ fun AppNavHost(innerPadding: PaddingValues) {
                         }
                     )
                 }
-
                 composable(Routes.Chart.route) {
                     StatisticsScreen(
                         onBackClick = {
@@ -96,13 +104,15 @@ fun AppNavHost(innerPadding: PaddingValues) {
                         }
                     )
                 }
-
                 composable(Routes.Settings.route) {
                     ProfileScreen(
                         onBackClick = {
                             navController.popBackStack()
                         }
                     )
+                }
+                composable(Routes.AddMedicineSchedule.route) {
+                    AddMedicineScreen()
                 }
             }
         }
