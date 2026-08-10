@@ -1,5 +1,7 @@
 package com.ramesh.medicareplus.presentation.home
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,12 +18,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,13 +28,19 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Medication
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,28 +49,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ramesh.medicareplus.core.ui.components.EmptyView
 import com.ramesh.medicareplus.core.ui.theme.Background
 import com.ramesh.medicareplus.core.ui.theme.MedicareplusTheme
 import com.ramesh.medicareplus.core.ui.theme.Primary
 import com.ramesh.medicareplus.core.ui.theme.Secondary
-import com.ramesh.medicareplus.core.ui.theme.Success
 import com.ramesh.medicareplus.core.ui.theme.Surface
 import com.ramesh.medicareplus.core.ui.theme.TextPrimary
-import com.ramesh.medicareplus.core.ui.theme.TextSecondary
 import com.ramesh.medicareplus.core.ui.theme.White
 import com.ramesh.medicareplus.domain.model.Medicine
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
+
+// ============================================================
+// HOME SCREEN
+// ============================================================
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
-    onMenuClick: () -> Unit = {}
+    onMenuClick: () -> Unit = {},
+    viewModel: MedicineViewModel = hiltViewModel(),
+    previewMedicines: List<Medicine>? = null
 ) {
-    val medicines = listOf(
-        Medicine("1", "Melformin 500mg tablets", "1 Pill | 1 Pill", "8:30 AM", true),
-        Medicine("2", "Paracetamol", "1 Pill | 1 Pill", "8:30 AM", true),
-        Medicine("3", "Omega - 4", "1 Pill | 1 Pill", "8:30 AM", true),
-        Medicine("4", "Vitamin C", "1 Pill | 1 Pill", "8:30 AM", true),
-        Medicine("5", "Iron Supplement", "1 Pill | 1 Pill", "9:00 PM", false)
-    )
+
+    val medicinesFromDb by viewModel.allMedicines.collectAsState()
+    val medicines = previewMedicines ?: medicinesFromDb
 
     Column(
         modifier = Modifier
@@ -75,31 +87,71 @@ fun HomeScreen(
             .navigationBarsPadding()
             .padding(horizontal = 20.dp)
     ) {
-        HomeHeader(onMenuClick = onMenuClick)
-        Spacer(modifier = Modifier.height(24.dp))
+
+        // Header
+        HomeHeader(
+            onMenuClick = onMenuClick
+        )
+
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
+
+        // Weekly Calendar
         CalendarStrip()
-        Spacer(modifier = Modifier.height(32.dp))
+
+        Spacer(
+            modifier = Modifier.height(32.dp)
+        )
+
+        // Today
         Text(
             text = "Today",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineSmall,
             color = TextPrimary
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 100.dp)
-        ) {
-            items(medicines.size) { index ->
-                MedicineCard(medicines[index])
+
+        Spacer(
+            modifier = Modifier.height(16.dp)
+        )
+
+        // Medicine List
+        if (medicines.isEmpty()) {
+            EmptyView(
+                text = "No medicines scheduled for today",
+                modifier = Modifier.weight(1f)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+
+                items(medicines.size) { index ->
+                    val medicine = medicines[index]
+                    MedicineCard(
+                        medicine = medicine,
+                        onToggleTaken = {
+                            viewModel.toggleMedicineTaken(medicine)
+                        }
+                    )
+                }
             }
         }
     }
 }
+
+
+// ============================================================
+// HOME HEADER
+// ============================================================
+
 @Composable
 fun HomeHeader(
     onMenuClick: () -> Unit
 ) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -107,8 +159,13 @@ fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Placeholder for profile image
+
+        // Profile section
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            // Profile placeholder
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -119,30 +176,37 @@ fun HomeHeader(
                         color = Color(0xFFE0E0E0),
                         shape = CircleShape
                     )
-            ) {
-                // If you have a real image, use Image() here
-            }
-            Spacer(modifier = Modifier.width(12.dp))
+            )
+
+            Spacer(
+                modifier = Modifier.width(12.dp)
+            )
+
             Text(
                 text = "Ramesh R",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
                 color = TextPrimary
             )
         }
+
+        // Menu button
         Box(
-            modifier = Modifier.clickable{
-                onMenuClick.invoke()
-            }
+            modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
                 .background(Primary)
-
+                .clickable {
+                    onMenuClick()
+                },
+            contentAlignment = Alignment.Center
         ) {
+
             IconButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { onMenuClick.invoke() }
+                onClick = {
+                    onMenuClick()
+                }
             ) {
+
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Menu",
@@ -152,67 +216,217 @@ fun HomeHeader(
         }
     }
 }
-@Composable
-fun CalendarStrip() {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    val dates = listOf("16", "17", "18", "19", "20", "21", "22")
-    val selectedDate = "19"
 
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        items(days.size) { index ->
-            val isSelected = dates[index] == selectedDate
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            ) {
-                Text(
-                    text = days[index],
-                    fontSize = 14.sp,
-                    color = TextPrimary
+
+// ============================================================
+// WEEKLY CALENDAR
+// ============================================================
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarStrip(
+    modifier: Modifier = Modifier,
+    onDateSelected: (LocalDate) -> Unit = {}
+) {
+
+    /*
+     * Initially select today's date.
+     */
+    var selectedDate by remember {
+        mutableStateOf(LocalDate.now())
+    }
+
+    /*
+     * Find Monday of the current week.
+     *
+     * Example:
+     *
+     * Monday    16
+     * Tuesday   17
+     * Wednesday 18
+     * Thursday  19
+     * Friday    20
+     * Saturday  21
+     * Sunday    22
+     */
+    val startOfWeek = remember {
+
+        LocalDate.now()
+            .with(
+                TemporalAdjusters.previousOrSame(
+                    DayOfWeek.MONDAY
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .sizeIn(minWidth = 40.dp, minHeight = 40.dp)
-                        .clip(CircleShape)
-                        .background(if (isSelected) Primary else Color.Transparent)
-                        .padding(4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = dates[index],
-                        fontSize = 16.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) White else TextPrimary
-                    )
+            )
+    }
+
+    /*
+     * Create 7 dates:
+     *
+     * Monday -> Sunday
+     */
+    val weekDates = remember(startOfWeek) {
+
+        (0..6).map { index ->
+            startOfWeek.plusDays(index.toLong())
+        }
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        weekDates.forEach { date ->
+
+            CalendarDateItem(
+                date = date,
+                isSelected = date == selectedDate,
+                onClick = {
+
+                    selectedDate = date
+
+                    onDateSelected(date)
                 }
-            }
+            )
         }
     }
 }
+
+
+// ============================================================
+// CALENDAR DATE ITEM
+// ============================================================
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MedicineCard(medicine: Medicine) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
+private fun CalendarDateItem(
+    date: LocalDate,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+
+    /*
+     * Convert DayOfWeek into short display name.
+     */
+    val dayName = when (date.dayOfWeek) {
+
+        DayOfWeek.MONDAY -> "Mon"
+
+        DayOfWeek.TUESDAY -> "Tue"
+
+        DayOfWeek.WEDNESDAY -> "Wed"
+
+        DayOfWeek.THURSDAY -> "Thu"
+
+        DayOfWeek.FRIDAY -> "Fri"
+
+        DayOfWeek.SATURDAY -> "Sat"
+
+        DayOfWeek.SUNDAY -> "Sun"
+    }
+
+    Column(
+        modifier = Modifier
+            .width(40.dp)
+            .clickable {
+                onClick()
+            },
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        // ----------------------------------------------------
+        // Day name
+        // ----------------------------------------------------
+
+        Text(
+            text = dayName,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            color = TextPrimary
+        )
+
+        Spacer(
+            modifier = Modifier.height(14.dp)
+        )
+
+        // ----------------------------------------------------
+        // Date circle
+        // ----------------------------------------------------
+
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(
+                    color = if (isSelected) {
+                        Primary
+                    } else {
+                        Color.Transparent
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+
+            Text(
+                text = date.dayOfMonth.toString(),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) {
+                    White
+                } else {
+                    TextPrimary
+                }
+            )
+        }
+    }
+}
+
+
+// ============================================================
+// MEDICINE CARD
+// ============================================================
+
+@Composable
+fun MedicineCard(
+    medicine: Medicine,
+    onToggleTaken: () -> Unit = {}
+) {
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggleTaken() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Surface
+        )
+    ) {
+
         Row(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
+            // ------------------------------------------------
+            // Medicine Icon
+            // ------------------------------------------------
+
             Box(
                 modifier = Modifier
-                    .size(width = 60.dp, height = 80.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(
+                        width = 60.dp,
+                        height = 80.dp
+                    )
+                    .clip(
+                        RoundedCornerShape(12.dp)
+                    )
                     .background(Secondary),
                 contentAlignment = Alignment.Center
             ) {
+
                 Icon(
                     imageVector = Icons.Default.Medication,
                     contentDescription = null,
@@ -220,46 +434,108 @@ fun MedicineCard(medicine: Medicine) {
                     modifier = Modifier.size(32.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
+
+            Spacer(
+                modifier = Modifier.width(16.dp)
+            )
+
+            // ------------------------------------------------
+            // Medicine Details
+            // ------------------------------------------------
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+
+                // Medicine name
                 Text(
                     text = medicine.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
                     color = TextPrimary
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                // Dosage + Instruction
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
                     Icon(
                         imageVector = Icons.Default.Medication,
                         contentDescription = null,
                         tint = TextPrimary,
                         modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Spacer(
+                        modifier = Modifier.width(4.dp)
+                    )
+
                     Text(
                         text = medicine.dosage,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextPrimary
+                    )
+
+                    Spacer(
+                        modifier = Modifier.width(8.dp)
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.Restaurant,
+                        contentDescription = null,
+                        tint = TextPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+
+                    Spacer(
+                        modifier = Modifier.width(4.dp)
+                    )
+
+                    Text(
+                        text = medicine.instruction,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                // Time
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = null,
                         tint = TextPrimary,
                         modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Spacer(
+                        modifier = Modifier.width(4.dp)
+                    )
+
                     Text(
                         text = medicine.time,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary
                     )
                 }
             }
+
+            // ------------------------------------------------
+            // Taken Status
+            // ------------------------------------------------
+
             if (medicine.isTaken) {
+
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Taken",
@@ -270,10 +546,59 @@ fun MedicineCard(medicine: Medicine) {
         }
     }
 }
-@Preview(showBackground = true)
+
+
+// ============================================================
+// PREVIEW
+// ============================================================
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview(
+    name = "Home Screen - Data",
+    showBackground = true,
+    showSystemUi = true
+)
 @Composable
 fun HomeScreenPreview() {
+
     MedicareplusTheme {
-        HomeScreen()
+
+        HomeScreen(
+            previewMedicines = listOf(
+                Medicine(
+                    id = "1",
+                    name = "Paracetamol",
+                    dosage = "500mg",
+                    time = "08:00 AM",
+                    isTaken = false,
+                    instruction = "After Food"
+                ),
+                Medicine(
+                    id = "2",
+                    name = "Amoxicillin",
+                    dosage = "250mg",
+                    time = "01:00 PM",
+                    isTaken = true,
+                    instruction = "Before Food"
+                )
+            )
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview(
+    name = "Home Screen - Empty",
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+fun HomeScreenEmptyPreview() {
+
+    MedicareplusTheme {
+
+        HomeScreen(
+            previewMedicines = emptyList()
+        )
     }
 }

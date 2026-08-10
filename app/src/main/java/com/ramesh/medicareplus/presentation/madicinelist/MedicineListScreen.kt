@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,17 +29,26 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ramesh.medicareplus.core.ui.components.EmptyView
 import com.ramesh.medicareplus.core.ui.theme.Background
 import com.ramesh.medicareplus.core.ui.theme.MedicareplusTheme
 import com.ramesh.medicareplus.core.ui.theme.Primary
@@ -48,6 +56,7 @@ import com.ramesh.medicareplus.core.ui.theme.Secondary
 import com.ramesh.medicareplus.core.ui.theme.Surface
 import com.ramesh.medicareplus.core.ui.theme.TextPrimary
 import com.ramesh.medicareplus.domain.model.Medicine
+import com.ramesh.medicareplus.presentation.home.MedicineViewModel
 
 // ============================================================
 // Medicine List Screen
@@ -57,9 +66,12 @@ import com.ramesh.medicareplus.domain.model.Medicine
 fun MedicineListScreen(
     onBackClick: () -> Unit = {},
     onMedicineClick: (Medicine) -> Unit = {},
-    onMedicineMenuClick: (Medicine) -> Unit = {}
+    onEditClick: (Medicine) -> Unit = {},
+    viewModel: MedicineViewModel = hiltViewModel(),
+    previewMedicines: List<Medicine>? = null
 ) {
-    val medicines = previewMedicines()
+    val medicinesFromDb by viewModel.allMedicines.collectAsState()
+    val medicines = previewMedicines ?: medicinesFromDb
 
     Column(
         modifier = Modifier
@@ -80,22 +92,32 @@ fun MedicineListScreen(
         Spacer(modifier = Modifier.height(28.dp))
 
         // Medicine List
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            items(medicines.size) { index ->
-                val medicine = medicines[index]
-                MedicineListItem(
-                    medicine = medicine,
-                    onClick = {
-                        onMedicineClick(medicine)
-                    },
-                    onMenuClick = {
-                        onMedicineMenuClick(medicine)
-                    }
-                )
+        if (medicines.isEmpty()) {
+            EmptyView(
+                text = "No medicines added yet",
+                modifier = Modifier.weight(1f)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                items(medicines.size) { index ->
+                    val medicine = medicines[index]
+                    MedicineListItem(
+                        medicine = medicine,
+                        onClick = {
+                            onMedicineClick(medicine)
+                        },
+                        onEditClick = {
+                            onEditClick(medicine)
+                        },
+                        onDeleteClick = {
+                            viewModel.deleteMedicine(medicine)
+                        }
+                    )
+                }
             }
         }
     }
@@ -131,8 +153,7 @@ private fun MedicineListHeader(
         Text(
             text = "Your Medicine",
             modifier = Modifier.align(Alignment.Center),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineSmall,
             color = TextPrimary
         )
     }
@@ -146,8 +167,11 @@ private fun MedicineListHeader(
 private fun MedicineListItem(
     medicine: Medicine,
     onClick: () -> Unit,
-    onMenuClick: () -> Unit
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -199,19 +223,40 @@ private fun MedicineListItem(
                     Text(
                         text = medicine.name,
                         modifier = Modifier.weight(1f),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
                         color = TextPrimary
                     )
 
-                    IconButton(
-                        onClick = onMenuClick
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreHoriz,
-                            contentDescription = "Options for ${medicine.name}",
-                            tint = TextPrimary
-                        )
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreHoriz,
+                                contentDescription = "Options for ${medicine.name}",
+                                tint = TextPrimary
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                onClick = {
+                                    showMenu = false
+                                    onEditClick()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete") },
+                                onClick = {
+                                    showMenu = false
+                                    onDeleteClick()
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -233,14 +278,14 @@ private fun MedicineListItem(
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = medicine.dosage,
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = TextPrimary
                         )
                     }
 
                     Text(
                         text = "•",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary,
                         modifier = Modifier.padding(vertical = 2.dp)
                     )
@@ -255,7 +300,7 @@ private fun MedicineListItem(
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = medicine.instruction,
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = TextPrimary
                         )
                     }
@@ -279,7 +324,7 @@ private fun MedicineListItem(
 
                     Text(
                         text = medicine.time,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary
                     )
                 }
@@ -288,65 +333,45 @@ private fun MedicineListItem(
     }
 }
 
-// ============================================================
-// Preview Data
-// ============================================================
-
-private fun previewMedicines(): List<Medicine> {
-    return listOf(
-        Medicine(
-            id = "1",
-            name = "Melformin 500mg tablets",
-            dosage = "1 Pill",
-            time = "8:30 AM",
-            isTaken = false,
-            instruction = "After Meal"
-        ),
-        Medicine(
-            id = "2",
-            name = "Paracetamol",
-            dosage = "1 Pill",
-            time = "8:30 AM",
-            isTaken = false,
-            instruction = "After Meal"
-        ),
-        Medicine(
-            id = "3",
-            name = "Omega - 4",
-            dosage = "1 Pill",
-            time = "8:30 AM",
-            isTaken = false,
-            instruction = "After Meal"
-        ),
-        Medicine(
-            id = "4",
-            name = "Vitamin C",
-            dosage = "1 Pill",
-            time = "8:30 AM",
-            isTaken = false,
-            instruction = "After Meal"
-        ),
-        Medicine(
-            id = "5",
-            name = "Napa Extra",
-            dosage = "1 Pill",
-            time = "8:30 AM",
-            isTaken = false,
-            instruction = "After Meal"
-        )
-    )
-}
-
-// ============================================================
-// Preview
-// ============================================================
-
 @Preview(
+    name = "Medicine List - Data",
     showBackground = true,
 )
 @Composable
 private fun MedicineListScreenPreview() {
     MedicareplusTheme {
-        MedicineListScreen()
+        MedicineListScreen(
+            previewMedicines = listOf(
+                Medicine(
+                    id = "1",
+                    name = "Paracetamol",
+                    dosage = "500mg",
+                    time = "08:00 AM",
+                    isTaken = false,
+                    instruction = "After Food"
+                ),
+                Medicine(
+                    id = "2",
+                    name = "Amoxicillin",
+                    dosage = "250mg",
+                    time = "01:00 PM",
+                    isTaken = true,
+                    instruction = "Before Food"
+                )
+            )
+        )
+    }
+}
+
+@Preview(
+    name = "Medicine List - Empty",
+    showBackground = true,
+)
+@Composable
+private fun MedicineListScreenEmptyPreview() {
+    MedicareplusTheme {
+        MedicineListScreen(
+            previewMedicines = emptyList()
+        )
     }
 }

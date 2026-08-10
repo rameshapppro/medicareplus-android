@@ -32,10 +32,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -53,10 +54,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramesh.medicareplus.core.ui.theme.MedicareplusTheme
+import com.ramesh.medicareplus.domain.model.Medicine
+import com.ramesh.medicareplus.presentation.home.MedicineViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 // ---------------------------------------------------------------------
 // Colors
@@ -76,8 +81,10 @@ private val ArrowColor = Color(0xFF777777)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMedicineScreen(
+    medicineId: String? = null,
     onBackClick: () -> Unit = {},
-    onMakeSchedule: () -> Unit = {}
+    onMakeSchedule: () -> Unit = {},
+    viewModel: MedicineViewModel? = hiltViewModel()
 ) {
     var medicineName by remember { mutableStateOf("") }
     var strength by remember { mutableStateOf("") }
@@ -107,6 +114,26 @@ fun AddMedicineScreen(
         )
     }
 
+    val isEditing = medicineId != null
+
+    LaunchedEffect(medicineId) {
+        if (medicineId != null && viewModel != null) {
+            val medicine = viewModel.getMedicineById(medicineId)
+            medicine?.let {
+                medicineName = it.name
+                strength = it.strength
+                whenToTake = it.instruction
+                medicineType = it.medicineType
+                amount = it.amount
+                startDate = it.startDate
+                finishDate = it.endDate
+                if (it.selectedDays.isNotEmpty()) {
+                    selectedDays = it.selectedDays.split(",").toSet()
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -124,11 +151,9 @@ fun AddMedicineScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // ---------------------------------------------------------
             // Header
-            // ---------------------------------------------------------
-
             AddMedicineHeader(
+                title = if (isEditing) "Edit Medicine" else "Add Medicine",
                 onBackClick = onBackClick
             )
 
@@ -200,9 +225,9 @@ fun AddMedicineScreen(
                 value = whenToTake,
                 placeholder = "Select When To Take",
                 options = listOf(
-                    "Before Meal",
-                    "After Meal",
-                    "With Meal",
+                    "Before Food",
+                    "After Food",
+                    "With Food",
                     "Anytime"
                 ),
                 onSelected = {
@@ -379,7 +404,30 @@ fun AddMedicineScreen(
             // ---------------------------------------------------------
 
             Button(
-                onClick = onMakeSchedule,
+                onClick = {
+                    if (medicineName.isNotBlank()) {
+                        val medicine = Medicine(
+                            id = medicineId ?: UUID.randomUUID().toString(),
+                            name = medicineName,
+                            dosage = "$strength $amount $medicineType",
+                            strength = strength,
+                            amount = amount,
+                            medicineType = medicineType,
+                            time = "08:00 AM", // Placeholder
+                            isTaken = false,
+                            instruction = whenToTake,
+                            startDate = startDate,
+                            endDate = finishDate,
+                            selectedDays = selectedDays.joinToString(",")
+                        )
+                        if (isEditing) {
+                            viewModel?.updateMedicine(medicine)
+                        } else {
+                            viewModel?.addMedicine(medicine)
+                        }
+                        onMakeSchedule()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -392,10 +440,9 @@ fun AddMedicineScreen(
                 )
             ) {
                 Text(
-                    text = "Make Schedule",
+                    text = if (isEditing) "Update Schedule" else "Make Schedule",
                     color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
 
@@ -446,6 +493,7 @@ fun AddMedicineScreen(
 
 @Composable
 private fun AddMedicineHeader(
+    title: String,
     onBackClick: () -> Unit
 ) {
     Box(
@@ -479,10 +527,9 @@ private fun AddMedicineHeader(
 
         // Title
         Text(
-            text = "Add Medicine",
+            text = title,
             modifier = Modifier.align(Alignment.Center),
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineSmall,
             color = PrimaryText
         )
     }
@@ -522,7 +569,7 @@ private fun MedicinePhotoPicker(
 
         Text(
             text = "Add photo",
-            fontSize = 20.sp,
+            style = MaterialTheme.typography.titleMedium,
             color = SecondaryText
         )
     }
@@ -538,8 +585,7 @@ private fun MedicineLabel(
 ) {
     Text(
         text = text,
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.titleLarge,
         color = PrimaryText
     )
 }
@@ -564,11 +610,12 @@ private fun MedicineTextField(
         placeholder = {
             Text(
                 text = placeholder,
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.bodyLarge,
                 color = SecondaryText
             )
         },
         shape = RoundedCornerShape(14.dp),
+        textStyle = MaterialTheme.typography.bodyLarge,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text
         ),
@@ -624,7 +671,7 @@ private fun MedicineDropdown(
                     placeholder
                 },
                 modifier = Modifier.weight(1f),
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.bodyLarge,
                 color = if (value.isEmpty()) {
                     SecondaryText
                 } else {
@@ -693,7 +740,7 @@ private fun MedicineDateField(
                 formatDate(it)
             } ?: placeholder,
             modifier = Modifier.weight(1f),
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.bodyLarge,
             color = if (date == null) {
                 SecondaryText
             } else {
@@ -800,8 +847,7 @@ private fun DaysSelector(
 
                 Text(
                     text = day,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.labelLarge,
                     color = PrimaryText,
                     textAlign = TextAlign.Center
                 )
@@ -839,6 +885,8 @@ private fun formatDate(
 @Composable
 private fun AddMedicineScreenPreview() {
     MedicareplusTheme {
-        AddMedicineScreen()
+        AddMedicineScreen(
+            viewModel = null
+        )
     }
 }

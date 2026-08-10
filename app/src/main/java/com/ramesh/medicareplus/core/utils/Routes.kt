@@ -16,12 +16,12 @@ sealed class Routes(val route: String) {
     data object AddMedicine : Routes("add_medicine")
 
     data object MedicineDetails : Routes("medicine_details/{medicineId}") {
-        fun createRoute(medicineId: Long) =
+        fun createRoute(medicineId: String) =
             "medicine_details/$medicineId"
     }
 
     data object EditMedicine : Routes("edit_medicine/{medicineId}") {
-        fun createRoute(medicineId: Long) =
+        fun createRoute(medicineId: String) =
             "edit_medicine/$medicineId"
     }
 

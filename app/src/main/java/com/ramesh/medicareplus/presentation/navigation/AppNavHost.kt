@@ -1,11 +1,15 @@
 package com.ramesh.medicareplus.presentation.navigation
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,11 +17,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ramesh.medicareplus.core.utils.Routes
 import com.ramesh.medicareplus.presentation.addmedicine.AddMedicineScreen
-import com.ramesh.medicareplus.presentation.madicinelist.MedicineListScreen
 import com.ramesh.medicareplus.presentation.chart.StatisticsScreen
 import com.ramesh.medicareplus.presentation.home.HomeScreen
+import com.ramesh.medicareplus.presentation.madicinelist.MedicineListScreen
 import com.ramesh.medicareplus.presentation.settings.ProfileScreen
 import com.ramesh.medicareplus.presentation.splash.SplashScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun AppNavHost(innerPadding: PaddingValues) {
@@ -82,11 +88,7 @@ fun AppNavHost(innerPadding: PaddingValues) {
                 composable(Routes.Home.route) {
                     HomeScreen(
                         onMenuClick = {
-                            composable(Routes.AddMedicineSchedule.route) {
-                                AddMedicineScreen()
-                            }
-                        }.also {
-                            Log.d("AddMedicineSchedule", "AppNavHost: ")
+                            navController.navigate(Routes.AddMedicineSchedule.route)
                         }
                     )
                 }
@@ -94,6 +96,9 @@ fun AppNavHost(innerPadding: PaddingValues) {
                     MedicineListScreen(
                         onBackClick = {
                             navController.popBackStack()
+                        },
+                        onEditClick = { medicine ->
+                            navController.navigate(Routes.EditMedicine.createRoute(medicine.id))
                         }
                     )
                 }
@@ -112,7 +117,30 @@ fun AppNavHost(innerPadding: PaddingValues) {
                     )
                 }
                 composable(Routes.AddMedicineSchedule.route) {
-                    AddMedicineScreen()
+                    AddMedicineScreen(
+                        onBackClick = {
+                            navController.popBackStack()
+                        },
+                        onMakeSchedule = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(
+                    route = Routes.EditMedicine.route,
+                    arguments = listOf(navArgument("medicineId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val medicineId = backStackEntry.arguments?.getString("medicineId")
+                    AddMedicineScreen(
+                        medicineId = medicineId,
+                        onBackClick = {
+                            navController.popBackStack()
+                        },
+                        onMakeSchedule = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
             }
         }
