@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,16 +25,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramesh.medicareplus.core.ui.theme.*
+import com.ramesh.medicareplus.presentation.home.MedicineViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
+import java.util.Locale
 
 @Composable
 fun StatisticsScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    viewModel: MedicineViewModel? = hiltViewModel(),
+    previewStats: StatisticsState? = null
 ) {
+    val statsFromVm by viewModel?.statisticsState?.collectAsState() ?: remember { mutableStateOf(StatisticsState()) }
+    val stats = previewStats ?: statsFromVm
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
@@ -59,7 +72,7 @@ fun StatisticsScreen(
                 text = "Your Statistics",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
@@ -80,14 +93,14 @@ fun StatisticsScreen(
         // Progress Section
         SectionTitle(title = "Progress")
         Spacer(modifier = Modifier.height(16.dp))
-        ProgressCard()
+        ProgressCard(stats.progressPercentage)
 
         Spacer(modifier = Modifier.height(32.dp))
 
         // Analysis Section
         SectionTitle(title = "Analysis")
         Spacer(modifier = Modifier.height(16.dp))
-        AnalysisGrid()
+        AnalysisGrid(stats)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -105,7 +118,7 @@ fun FilterButton(text: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.height(48.dp),
         shape = RoundedCornerShape(12.dp),
-        color = Surface
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
@@ -114,8 +127,8 @@ fun FilterButton(text: String, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-            Icon(imageVector = Icons.Default.ExpandMore, contentDescription = null, tint = TextSecondary)
+            Text(text = text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Icon(imageVector = Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -126,16 +139,16 @@ fun SectionTitle(title: String) {
         text = title,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        color = TextPrimary
+        color = MaterialTheme.colorScheme.onBackground
     )
 }
 
 @Composable
-fun ProgressCard() {
+fun ProgressCard(percentage: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -150,22 +163,26 @@ fun ProgressCard() {
                     val strokeWidth = 8.dp.toPx()
                     
                     // Background circles
-                    drawCircle(color = Color(0xFFE0E0E0), style = Stroke(strokeWidth))
-                    drawCircle(color = Color(0xFFE0E0E0), radius = size.minDimension / 2 - 20.dp.toPx(), style = Stroke(strokeWidth))
-                    drawCircle(color = Color(0xFFE0E0E0), radius = size.minDimension / 2 - 40.dp.toPx(), style = Stroke(strokeWidth))
+                    val bgColor = Color(0xFFE0E0E0).copy(alpha = 0.2f)
+                    drawCircle(color = bgColor, style = Stroke(strokeWidth))
+                    drawCircle(color = bgColor, radius = size.minDimension / 2 - 20.dp.toPx(), style = Stroke(strokeWidth))
+                    drawCircle(color = bgColor, radius = size.minDimension / 2 - 40.dp.toPx(), style = Stroke(strokeWidth))
+
 
                     // Progress arcs
+                    val sweepAngle = (percentage.toFloat() / 100) * 360f
+                    
                     drawArc(
                         color = ChartGreen,
                         startAngle = -90f,
-                        sweepAngle = 260f,
+                        sweepAngle = sweepAngle,
                         useCenter = false,
                         style = Stroke(strokeWidth, cap = StrokeCap.Round)
                     )
                     drawArc(
                         color = ChartBlue,
                         startAngle = -90f,
-                        sweepAngle = 180f,
+                        sweepAngle = sweepAngle * 0.7f, // Mock secondary ring
                         useCenter = false,
                         style = Stroke(strokeWidth, cap = StrokeCap.Round),
                         size = size.copy(width = size.width - 40.dp.toPx(), height = size.height - 40.dp.toPx()),
@@ -174,14 +191,14 @@ fun ProgressCard() {
                     drawArc(
                         color = ChartOrange,
                         startAngle = -90f,
-                        sweepAngle = 120f,
+                        sweepAngle = sweepAngle * 0.5f, // Mock tertiary ring
                         useCenter = false,
                         style = Stroke(strokeWidth, cap = StrokeCap.Round),
                         size = size.copy(width = size.width - 80.dp.toPx(), height = size.height - 80.dp.toPx()),
                         topLeft = center.copy(x = 40.dp.toPx(), y = 40.dp.toPx())
                     )
                 }
-                Text(text = "68%", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text(text = "$percentage%", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
             }
 
             // Legend
@@ -204,20 +221,20 @@ fun LegendItem(color: Color, text: String) {
                 .background(color)
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Text(text = text, fontSize = 14.sp, color = TextPrimary)
+        Text(text = text, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
 @Composable
-fun AnalysisGrid() {
+fun AnalysisGrid(stats: StatisticsState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            AnalysisCard(label = "Active", value = "03", modifier = Modifier.weight(1f))
-            AnalysisCard(label = "Completed Task", value = "04", modifier = Modifier.weight(1f))
+            AnalysisCard(label = "Active", value = String.format(Locale.getDefault(), "%02d", stats.totalMedicines), modifier = Modifier.weight(1f))
+            AnalysisCard(label = "Completed Task", value = String.format(Locale.getDefault(), "%02d", stats.completedMedicines), modifier = Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            AnalysisCard(label = "Incomplete", value = "05", modifier = Modifier.weight(1f))
-            AnalysisCard(label = "Reward", value = "03", modifier = Modifier.weight(1f))
+            AnalysisCard(label = "Incomplete", value = String.format(Locale.getDefault(), "%02d", stats.incompleteMedicines), modifier = Modifier.weight(1f))
+            AnalysisCard(label = "Reward", value = String.format(Locale.getDefault(), "%02d", stats.rewards), modifier = Modifier.weight(1f))
         }
     }
 }
@@ -227,7 +244,7 @@ fun AnalysisCard(label: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.height(80.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
@@ -235,8 +252,8 @@ fun AnalysisCard(label: String, value: String, modifier: Modifier = Modifier) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = label, fontSize = 12.sp, color = TextSecondary)
-            Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -246,7 +263,7 @@ fun AchievementCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -274,7 +291,7 @@ fun AchievementItem(color: Color, label: String) {
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, fontSize = 12.sp, color = TextSecondary)
+        Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -282,6 +299,15 @@ fun AchievementItem(color: Color, label: String) {
 @Composable
 fun StatisticsScreenPreview() {
     MedicareplusTheme {
-        StatisticsScreen()
+        StatisticsScreen(
+            viewModel = null,
+            previewStats = StatisticsState(
+                totalMedicines = 12,
+                completedMedicines = 8,
+                incompleteMedicines = 4,
+                rewards = 4,
+                progressPercentage = 68
+            )
+        )
     }
 }

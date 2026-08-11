@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ramesh.medicareplus.domain.model.Medicine
 import com.ramesh.medicareplus.domain.repository.MedicineRepository
+import com.ramesh.medicareplus.presentation.chart.StatisticsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,6 +24,26 @@ class MedicineViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val statisticsState: StateFlow<StatisticsState> = allMedicines.map { medicines ->
+        val total = medicines.size
+        val completed = medicines.count { it.isTaken }
+        val incomplete = total - completed
+        val percentage = if (total > 0) (completed.toFloat() / total * 100).toInt() else 0
+        val rewards = completed / 2 // Mock logic
+
+        StatisticsState(
+            totalMedicines = total,
+            completedMedicines = completed,
+            incompleteMedicines = incomplete,
+            rewards = rewards,
+            progressPercentage = percentage
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = StatisticsState()
+    )
 
     fun addMedicine(medicine: Medicine) {
         viewModelScope.launch {

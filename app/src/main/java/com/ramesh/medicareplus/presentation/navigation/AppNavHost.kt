@@ -76,11 +76,11 @@ fun AppNavHost(innerPadding: PaddingValues) {
                 composable(Routes.Splash.route) {
                     SplashScreen(
                         onFinished = {
-                            navController.navigate(Routes.Home.route) {
-                                popUpTo(Routes.Splash.route) {
-                                    inclusive = true
-                                }
-                            }
+//                            navController.navigate(Routes.Home.route) {
+//                                popUpTo(Routes.Splash.route) {
+//                                    inclusive = true
+//                                }
+//                            }
                         }
                     )
                 }

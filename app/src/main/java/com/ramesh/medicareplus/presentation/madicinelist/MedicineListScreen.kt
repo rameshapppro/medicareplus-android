@@ -49,12 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramesh.medicareplus.core.ui.components.EmptyView
-import com.ramesh.medicareplus.core.ui.theme.Background
 import com.ramesh.medicareplus.core.ui.theme.MedicareplusTheme
-import com.ramesh.medicareplus.core.ui.theme.Primary
-import com.ramesh.medicareplus.core.ui.theme.Secondary
-import com.ramesh.medicareplus.core.ui.theme.Surface
-import com.ramesh.medicareplus.core.ui.theme.TextPrimary
 import com.ramesh.medicareplus.domain.model.Medicine
 import com.ramesh.medicareplus.presentation.home.MedicineViewModel
 
@@ -76,7 +71,7 @@ fun MedicineListScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 20.dp)
@@ -141,12 +136,12 @@ private fun MedicineListHeader(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .background(Secondary, CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = TextPrimary
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
 
@@ -154,7 +149,7 @@ private fun MedicineListHeader(
             text = "Your Medicine",
             modifier = Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.headlineSmall,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -177,7 +172,7 @@ private fun MedicineListItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Surface
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
 
@@ -196,13 +191,13 @@ private fun MedicineListItem(
                         minHeight = 80.dp
                     )
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Secondary),
+                    .background(MaterialTheme.colorScheme.secondary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Medication,
                     contentDescription = null,
-                    tint = Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -224,7 +219,7 @@ private fun MedicineListItem(
                         text = medicine.name,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleMedium,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Box {
@@ -234,7 +229,7 @@ private fun MedicineListItem(
                             Icon(
                                 imageVector = Icons.Default.MoreHoriz,
                                 contentDescription = "Options for ${medicine.name}",
-                                tint = TextPrimary
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -272,21 +267,21 @@ private fun MedicineListItem(
                         Icon(
                             imageVector = Icons.Default.Medication,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = medicine.dosage,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
                     Text(
                         text = "•",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(vertical = 2.dp)
                     )
 
@@ -294,14 +289,14 @@ private fun MedicineListItem(
                         Icon(
                             imageVector = Icons.Default.Restaurant,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = medicine.instruction,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -316,7 +311,7 @@ private fun MedicineListItem(
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = null,
-                        tint = TextPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
 
@@ -325,7 +320,7 @@ private fun MedicineListItem(
                     Text(
                         text = medicine.time,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

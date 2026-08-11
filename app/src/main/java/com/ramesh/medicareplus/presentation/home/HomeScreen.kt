@@ -1,5 +1,6 @@
 package com.ramesh.medicareplus.presentation.home
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -51,43 +52,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramesh.medicareplus.core.ui.components.EmptyView
-import com.ramesh.medicareplus.core.ui.theme.Background
 import com.ramesh.medicareplus.core.ui.theme.MedicareplusTheme
-import com.ramesh.medicareplus.core.ui.theme.Primary
-import com.ramesh.medicareplus.core.ui.theme.Secondary
-import com.ramesh.medicareplus.core.ui.theme.Surface
-import com.ramesh.medicareplus.core.ui.theme.TextPrimary
 import com.ramesh.medicareplus.core.ui.theme.White
 import com.ramesh.medicareplus.domain.model.Medicine
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
-
 // ============================================================
 // HOME SCREEN
 // ============================================================
-
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
     onMenuClick: () -> Unit = {},
     viewModel: MedicineViewModel = hiltViewModel(),
     previewMedicines: List<Medicine>? = null
 ) {
-
     val medicinesFromDb by viewModel.allMedicines.collectAsState()
     val medicines = previewMedicines ?: medicinesFromDb
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 20.dp)
     ) {
-
         // Header
         HomeHeader(
             onMenuClick = onMenuClick
@@ -96,25 +87,20 @@ fun HomeScreen(
         Spacer(
             modifier = Modifier.height(24.dp)
         )
-
         // Weekly Calendar
         CalendarStrip()
 
         Spacer(
             modifier = Modifier.height(32.dp)
         )
-
         // Today
         Text(
             text = "Today",
             style = MaterialTheme.typography.headlineSmall,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
+        Spacer(modifier = Modifier.height(16.dp))
         // Medicine List
         if (medicines.isEmpty()) {
             EmptyView(
@@ -127,7 +113,6 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 100.dp)
             ) {
-
                 items(medicines.size) { index ->
                     val medicine = medicines[index]
                     MedicineCard(
@@ -141,17 +126,13 @@ fun HomeScreen(
         }
     }
 }
-
-
 // ============================================================
 // HOME HEADER
 // ============================================================
-
 @Composable
 fun HomeHeader(
     onMenuClick: () -> Unit
 ) {
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -159,18 +140,16 @@ fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         // Profile section
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             // Profile placeholder
             Box(
                 modifier = Modifier
                     .size(60.dp)
                     .clip(CircleShape)
-                    .background(Primary)
+                    .background(Color(0xFF5F59F7))
                     .border(
                         width = 1.dp,
                         color = Color(0xFFE0E0E0),
@@ -185,28 +164,25 @@ fun HomeHeader(
             Text(
                 text = "Ramesh R",
                 style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
-
         // Menu button
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Primary)
+                .background(Color(0xFF5F59F7))
                 .clickable {
                     onMenuClick()
                 },
             contentAlignment = Alignment.Center
         ) {
-
             IconButton(
                 onClick = {
                     onMenuClick()
                 }
             ) {
-
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Menu",
@@ -216,26 +192,21 @@ fun HomeHeader(
         }
     }
 }
-
-
 // ============================================================
 // WEEKLY CALENDAR
 // ============================================================
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarStrip(
     modifier: Modifier = Modifier,
     onDateSelected: (LocalDate) -> Unit = {}
 ) {
-
     /*
      * Initially select today's date.
      */
     var selectedDate by remember {
         mutableStateOf(LocalDate.now())
     }
-
     /*
      * Find Monday of the current week.
      *
@@ -250,7 +221,6 @@ fun CalendarStrip(
      * Sunday    22
      */
     val startOfWeek = remember {
-
         LocalDate.now()
             .with(
                 TemporalAdjusters.previousOrSame(
@@ -258,14 +228,12 @@ fun CalendarStrip(
                 )
             )
     }
-
     /*
      * Create 7 dates:
      *
      * Monday -> Sunday
      */
     val weekDates = remember(startOfWeek) {
-
         (0..6).map { index ->
             startOfWeek.plusDays(index.toLong())
         }
@@ -276,14 +244,11 @@ fun CalendarStrip(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         weekDates.forEach { date ->
-
             CalendarDateItem(
                 date = date,
                 isSelected = date == selectedDate,
                 onClick = {
-
                     selectedDate = date
 
                     onDateSelected(date)
@@ -292,12 +257,9 @@ fun CalendarStrip(
         }
     }
 }
-
-
 // ============================================================
 // CALENDAR DATE ITEM
 // ============================================================
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun CalendarDateItem(
@@ -305,24 +267,16 @@ private fun CalendarDateItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-
     /*
      * Convert DayOfWeek into short display name.
      */
     val dayName = when (date.dayOfWeek) {
-
         DayOfWeek.MONDAY -> "Mon"
-
         DayOfWeek.TUESDAY -> "Tue"
-
         DayOfWeek.WEDNESDAY -> "Wed"
-
         DayOfWeek.THURSDAY -> "Thu"
-
         DayOfWeek.FRIDAY -> "Fri"
-
         DayOfWeek.SATURDAY -> "Sat"
-
         DayOfWeek.SUNDAY -> "Sun"
     }
 
@@ -334,40 +288,35 @@ private fun CalendarDateItem(
             },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         // ----------------------------------------------------
         // Day name
         // ----------------------------------------------------
-
         Text(
             text = dayName,
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(
             modifier = Modifier.height(14.dp)
         )
-
         // ----------------------------------------------------
         // Date circle
         // ----------------------------------------------------
-
         Box(
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
                 .background(
                     color = if (isSelected) {
-                        Primary
+                        Color(0xFF5F59F7)
                     } else {
                         Color.Transparent
                     }
                 ),
             contentAlignment = Alignment.Center
         ) {
-
             Text(
                 text = date.dayOfMonth.toString(),
                 fontSize = 18.sp,
@@ -375,45 +324,38 @@ private fun CalendarDateItem(
                 color = if (isSelected) {
                     White
                 } else {
-                    TextPrimary
+                    MaterialTheme.colorScheme.onBackground
                 }
             )
         }
     }
 }
-
-
 // ============================================================
 // MEDICINE CARD
 // ============================================================
-
 @Composable
 fun MedicineCard(
     medicine: Medicine,
     onToggleTaken: () -> Unit = {}
 ) {
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggleTaken() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Surface
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-
         Row(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             // ------------------------------------------------
             // Medicine Icon
             // ------------------------------------------------
-
             Box(
                 modifier = Modifier
                     .size(
@@ -423,14 +365,13 @@ fun MedicineCard(
                     .clip(
                         RoundedCornerShape(12.dp)
                     )
-                    .background(Secondary),
+                    .background(MaterialTheme.colorScheme.secondary),
                 contentAlignment = Alignment.Center
             ) {
-
                 Icon(
                     imageVector = Icons.Default.Medication,
                     contentDescription = null,
-                    tint = Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -438,35 +379,30 @@ fun MedicineCard(
             Spacer(
                 modifier = Modifier.width(16.dp)
             )
-
             // ------------------------------------------------
             // Medicine Details
             // ------------------------------------------------
-
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 // Medicine name
                 Text(
                     text = medicine.name,
                     style = MaterialTheme.typography.titleMedium,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(
                     modifier = Modifier.height(8.dp)
                 )
-
                 // Dosage + Instruction
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Icon(
                         imageVector = Icons.Default.Medication,
                         contentDescription = null,
-                        tint = TextPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
 
@@ -477,7 +413,7 @@ fun MedicineCard(
                     Text(
                         text = medicine.dosage,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(
@@ -487,7 +423,7 @@ fun MedicineCard(
                     Icon(
                         imageVector = Icons.Default.Restaurant,
                         contentDescription = null,
-                        tint = TextPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
 
@@ -498,23 +434,21 @@ fun MedicineCard(
                     Text(
                         text = medicine.instruction,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Spacer(
                     modifier = Modifier.height(8.dp)
                 )
-
                 // Time
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = null,
-                        tint = TextPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
 
@@ -525,17 +459,14 @@ fun MedicineCard(
                     Text(
                         text = medicine.time,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-
             // ------------------------------------------------
             // Taken Status
             // ------------------------------------------------
-
             if (medicine.isTaken) {
-
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Taken",
@@ -546,12 +477,9 @@ fun MedicineCard(
         }
     }
 }
-
-
 // ============================================================
 // PREVIEW
 // ============================================================
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(
     name = "Home Screen - Data",
@@ -560,9 +488,7 @@ fun MedicineCard(
 )
 @Composable
 fun HomeScreenPreview() {
-
     MedicareplusTheme {
-
         HomeScreen(
             previewMedicines = listOf(
                 Medicine(
@@ -585,7 +511,6 @@ fun HomeScreenPreview() {
         )
     }
 }
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(
     name = "Home Screen - Empty",
@@ -594,9 +519,7 @@ fun HomeScreenPreview() {
 )
 @Composable
 fun HomeScreenEmptyPreview() {
-
     MedicareplusTheme {
-
         HomeScreen(
             previewMedicines = emptyList()
         )

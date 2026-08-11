@@ -13,6 +13,10 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,17 +25,25 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramesh.medicareplus.core.ui.theme.*
+import com.ramesh.medicareplus.presentation.ThemeViewModel
+import androidx.activity.ComponentActivity
 
 @Composable
 fun ProfileScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    themeViewModel: ThemeViewModel = hiltViewModel(LocalContext.current as ComponentActivity)
 ) {
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -58,7 +70,7 @@ fun ProfileScreen(
                 text = "Your Profile",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
@@ -78,27 +90,27 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "Kevin Henry",
+            text = "Ramesh R",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
         
         Text(
-            text = "kevinhenry482@gmail.com",
+            text = "ramesh.appro@gmail.com",
             fontSize = 14.sp,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Spacer(modifier = Modifier.height(32.dp))
         
         // Options List
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ProfileOptionItem(
-                icon = Icons.Default.PersonOutline,
-                title = "My Account",
-                onClick = {}
-            )
+//            ProfileOptionItem(
+//                icon = Icons.Default.PersonOutline,
+//                title = "My Account",
+//                onClick = {}
+//            )
             ProfileOptionItem(
                 icon = Icons.Default.NotificationsNone,
                 title = "Notification Settings",
@@ -106,7 +118,9 @@ fun ProfileScreen(
             )
             ProfileOptionItem(
                 icon = Icons.Default.HelpOutline,
-                title = "Help Center",
+                title = "Dark Theme",
+                isDarkTheme = isDarkTheme,
+                onThemeToggle = { themeViewModel.toggleTheme(it) },
                 onClick = {}
             )
             ProfileOptionItem(
@@ -122,6 +136,8 @@ fun ProfileScreen(
 fun ProfileOptionItem(
     icon: ImageVector,
     title: String,
+    isDarkTheme: Boolean = false,
+    onThemeToggle: (Boolean) -> Unit = {},
     onClick: () -> Unit
 ) {
     Card(
@@ -130,7 +146,7 @@ fun ProfileOptionItem(
             .fillMaxWidth()
             .height(72.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -143,7 +159,7 @@ fun ProfileOptionItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = TextPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -151,15 +167,44 @@ fun ProfileOptionItem(
                     text = title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(24.dp)
-            )
+            if(title.equals("Dark Theme", ignoreCase = false)) {
+                Switch(
+                    checked = isDarkTheme,
+                    onCheckedChange = { enabled ->
+                        onThemeToggle(enabled)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = Primary,
+                        checkedThumbColor = Color.White
+                    )
+                )
+            }
+            else  if(title.equals("Notification Settings", ignoreCase = false)){
+                var isEnabled by remember {
+                    mutableStateOf(true)
+                }
+                Switch(
+                    checked = isEnabled,
+                    onCheckedChange = { enabled ->
+                        isEnabled = enabled
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = Primary,
+                        checkedThumbColor = Color.White
+                    )
+                )
+            }
+            else {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
